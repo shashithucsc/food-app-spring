@@ -1,0 +1,54 @@
+services:
+  # Relational Database (For User, Inventory, and Order Services)
+  postgres:
+    image: postgres:15-alpine
+    container_name: food_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - food_network
+
+  # NoSQL Database (For Catalog Service - High read performance)
+  mongodb:
+    image: mongo:6.0
+    container_name: food_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin_password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - food_network
+
+  # Identity and Access Management
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.0
+    container_name: food_keycloak
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin_password
+    # start-dev runs Keycloak in development mode (no HTTPS required locally)
+    command: start-dev
+    ports:
+      - "8080:8080"
+    networks:
+      - food_network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+
+networks:
+  food_network:
+    driver: bridge
